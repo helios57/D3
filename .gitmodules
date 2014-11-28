@@ -1,0 +1,3 @@
+[submodule "mavlink"]
+	path = mavlink
+	url = git://github.com/helios57/c_library.git
