@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 	CascadeClassifier* face_cascade = new CascadeClassifier();
 	face_cascade->load("cascade.xml");
 
-	cout << "detectTime;midx;midy;x;y;width;height;roll;pitch;yaw;correctureX;correctureY;localX;localY;localXSet;localYSet" << endl;
+	cout << "detectTime;midx;midy;x;y;width;height;roll;pitch;correctureX;correctureY" << endl;
 	do {
 		getNetxImage(vrmStatus);
 		getMostRecentImage(vrmStatus);
@@ -44,6 +44,10 @@ int main(int argc, char** argv) {
 			// output a message
 			//if (vrmStatus->frames_dropped)
 			//	cout << "- " << vrmStatus->frames_dropped << " frames dropped-" << endl;
+
+			//Get time of capture
+			struct timespec monotime;
+			clock_gettime(CLOCK_MONOTONIC, &monotime);
 
 			Mat mat = getMat(vrmStatus->p_source_img);
 			objs.clear();
@@ -81,19 +85,14 @@ int main(int argc, char** argv) {
 #endif
 				int midX = max->x + max->width / 2 - width / 2;
 				int midY = max->y + max->height / 2 - height / 2;
-				mavlink_attitude_t attitude = mavlink.getAttitude();
-				float corrX = midX * 0.0005f + attitude.roll;
-				float corrY = midY * 0.0005f + attitude.pitch;
+				mavlink_d3_pitchroll_t pitchRoll = mavlink.getPitchRoll();
+				float corrX = midX * 0.0005f + pitchRoll.roll;
+				float corrY = midY * 0.0005f + pitchRoll.pitch;
 				cout << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
 				cout << ";" << max->width << ";" << max->height;
-				cout << ";" << attitude.roll << ";" << attitude.pitch << ";" << attitude.yaw;
-				cout << ";" << corrX << ";" << corrY;
-				mavlink_local_position_ned_t lp = mavlink.getLocalPostition();
-				cout << ";" << lp.x << ";" << lp.y;
-				mavlink_position_target_local_ned_t lpt = mavlink.getLocalPositionTarget();
-				cout << ";" << lpt.x << ";" << lpt.y;
+				cout << ";" << pitchRoll.roll << ";" << pitchRoll.pitch << ";" << corrX << ";" << corrY;
 				cout << endl;
-				mavlink.sendCorrection(corrX * 10, corrY * 10, 0.0f);
+				mavlink.send_target(monotime.tv_nsec/1000000,corrX * 10, corrY * 10);
 #ifdef LINUX
 				rectangle(mat, cvPoint(cvRound(max->x), cvRound(max->y)), cvPoint(cvRound((max->x + max->width - 1)), cvRound((max->y + max->height - 1))), color, 3, 8, 0);
 #endif

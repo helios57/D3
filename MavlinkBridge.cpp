@@ -14,8 +14,11 @@ void blubber() {
 MavlinkBridge::MavlinkBridge() :
 		running(true), connected(false), bridge_tty_fd(0), bridge_c('D') {
 	receiverThread = 0;
-	memset(&setpointAdjustment, 0, sizeof(mavlink_set_position_target_local_ned_t));
-	memset(&attitude, 0, sizeof(mavlink_attitude_t));
+	memset(&msg, 0, sizeof(msg));
+	memset(&status, 0, sizeof(status));
+	memset(&target, 0, sizeof(target));
+	memset(&pitchRoll, 0, sizeof(pitchRoll));
+	memset(&flow, 0, sizeof(flow));
 	initStreams();
 }
 MavlinkBridge::~MavlinkBridge() {
@@ -75,31 +78,28 @@ void MavlinkBridge::readFromStream() {
 			if (msg.msgid == MAVLINK_MSG_ID_STATUSTEXT) {
 				mavlink_statustext_t s;
 				mavlink_msg_statustext_decode(&msg, &s);
-				if (strstr(s.text, "recieved") == 0){
+				if (strstr(s.text, "recieved") == 0) {
 					printf("status %s\n", s.text);
 				}
 			}
-			if (msg.msgid == MAVLINK_MSG_ID_ATTITUDE) {
-				mavlink_attitude_t at;
-				mavlink_msg_attitude_decode(&msg, &at);
-				attitude = at;
-			}
-			if (msg.msgid == MAVLINK_MSG_ID_LOCAL_POSITION_NED) {
-				mavlink_local_position_ned_t localPosition_t;
-				mavlink_msg_local_position_ned_decode(&msg, &localPosition_t);
-				localPosition = localPosition_t;
-			}
-			if (msg.msgid == MAVLINK_MSG_ID_POSITION_TARGET_LOCAL_NED) {
-				mavlink_position_target_local_ned_t localPositionTarget_t;
-				mavlink_msg_position_target_local_ned_decode(&msg, &localPositionTarget_t);
-				localPositionTarget = localPositionTarget_t;
+			if (msg.msgid == MAVLINK_MSG_ID_D3_PitchRoll) {
+				mavlink_d3_pitchroll_t l;
+				mavlink_msg_d3_pitchroll_decode(&msg, &l);
+				pitchRoll = l;
 			}
 		}
 	}
 }
 
-uint16_t MavlinkBridge::sendMessage() {
-	mavlink_msg_set_position_target_local_ned_encode(57, 57, &msg, &setpointAdjustment);
+uint16_t MavlinkBridge::sendTarget() {
+	mavlink_msg_d3_target_encode(57, 57, &msg, &target);
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+	write(bridge_tty_fd, &buf, len);
+	return len;
+}
+
+uint16_t MavlinkBridge::sendFlow() {
+	mavlink_msg_d3_flow_encode(57, 57, &msg, &flow);
 	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 	write(bridge_tty_fd, &buf, len);
 	return len;
@@ -114,8 +114,8 @@ void MavlinkBridge::stop() {
 	delete (receiverThread);
 }
 
-mavlink_attitude_t MavlinkBridge::getAttitude() {
-	return attitude;
+mavlink_d3_pitchroll_t MavlinkBridge::getPitchRoll() {
+	return pitchRoll;
 }
 
 void MavlinkBridge::threadMain() {
@@ -125,18 +125,17 @@ void MavlinkBridge::threadMain() {
 	}
 }
 
-mavlink_local_position_ned_t MavlinkBridge::getLocalPostition() {
-	return localPosition;
+void MavlinkBridge::send_target(long timestamp, float x, float y) {
+	target.timestamp = timestamp;
+	target.x = x;
+	target.y = y;
+	sendTarget();
 }
-
-mavlink_position_target_local_ned_t MavlinkBridge::getLocalPositionTarget() {
-	return localPositionTarget;
-}
-
-void MavlinkBridge::sendCorrection(float x, float y, float z) {
-	setpointAdjustment.x = x;
-	setpointAdjustment.y = y;
-	setpointAdjustment.z = z;
-	sendMessage();
+void MavlinkBridge::send_flow(long timestamp_from, long timestamp_to, float x, float y) {
+	flow.timestamp_from = timestamp_from;
+	flow.timestamp_to = timestamp_to;
+	target.x = x;
+	target.y = y;
+	sendTarget();
 }
 } /* namespace d3 */

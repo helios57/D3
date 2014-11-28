@@ -11,7 +11,7 @@
 #include <termios.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "mavlink/common/mavlink.h"
+#include "mavlink/pixhawk/mavlink.h"
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -25,10 +25,9 @@ class MavlinkBridge {
 		uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 		mavlink_message_t msg;
 		mavlink_status_t status;
-		mavlink_set_position_target_local_ned_t setpointAdjustment;
-		mavlink_attitude_t attitude;
-		mavlink_local_position_ned_t localPosition;
-		mavlink_position_target_local_ned_t localPositionTarget;
+		mavlink_d3_target_t target;
+		mavlink_d3_pitchroll_t pitchRoll;
+		mavlink_d3_flow_t flow;
 		struct termios bridge_tio;
 		bool running;
 		bool connected;
@@ -39,7 +38,8 @@ class MavlinkBridge {
 		void close();
 		void initStreams();
 		void readFromStream();
-		uint16_t sendMessage();
+		uint16_t sendTarget();
+		uint16_t sendFlow();
 		void threadMain();
 
 	public:
@@ -47,11 +47,9 @@ class MavlinkBridge {
 		virtual ~MavlinkBridge();
 		void start();
 		void stop();
-		mavlink_attitude_t getAttitude();
-		mavlink_local_position_ned_t getLocalPostition();
-		mavlink_position_target_local_ned_t getLocalPositionTarget();
-		void sendCorrection(float x, float y, float z);
-
+		mavlink_d3_pitchroll_t getPitchRoll();
+		void send_target(long timestamp, float x, float y);
+		void send_flow(long timestamp_from, long timestamp_to, float x, float y);
 };
 
 } /* namespace d3 */
