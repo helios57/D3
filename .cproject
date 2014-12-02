@@ -28,6 +28,7 @@
 									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabihf/include"/>
 									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabihf/vrmagic/usr/include"/>
 									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabihf/vrmagic/usr/include/libvrmusbcam2-3.3.2.0"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabihf/vrmagic/usr/include/arm-linux-gnueabihf"/>
 									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabihf/vrmagic/usr/vm_lib-1.0.1.0/include"/>
 									<listOptionValue builtIn="false" value="/home/helios/workspace/opencv/opencv/build_hardfp/install/include"/>
 								</option>
@@ -44,6 +45,7 @@
 									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabihf/include"/>
 									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabihf/vrmagic/usr/include"/>
 									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabihf/vrmagic/usr/include/libvrmusbcam2-3.3.2.0"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabihf/vrmagic/usr/include/arm-linux-gnueabihf"/>
 									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabihf/vrmagic/usr/vm_lib-1.0.1.0/include"/>
 									<listOptionValue builtIn="false" value="/home/helios/workspace/opencv/opencv/build_hardfp/install/include"/>
 								</option>

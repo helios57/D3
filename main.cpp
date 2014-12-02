@@ -11,6 +11,16 @@ using namespace std;
 using namespace d3;
 
 int main(int argc, char** argv) {
+	time_t starttime;
+	time(&starttime);
+	char datetime[80];
+	struct tm tstruct = *localtime(&starttime);
+	strftime(datetime, sizeof(datetime), "%Y%m%d%H%M%S", &tstruct);
+	string dateTimeString = datetime;
+
+	ofstream logfile;
+	logfile.open(dateTimeString + ".log", ios_base::app);
+
 	MavlinkBridge mavlink;
 	mavlink.start();
 
@@ -19,18 +29,28 @@ int main(int argc, char** argv) {
 
 	initCamera(vrmStatus);
 	startGrabber(vrmStatus);
-	cout << "Reading from camera..." << endl;
+	logfile << "Reading from camera..." << endl;
 
 #ifdef LINUX
 	cvNamedWindow("result");
 	startWindowThread();
-	Scalar color = CV_RGB(0, 0, 255);
 #endif
 
 	CascadeClassifier* face_cascade = new CascadeClassifier();
 	face_cascade->load("cascade.xml");
 
-	cout << "detectTime;midx;midy;x;y;width;height;roll;pitch;correctureX;correctureY" << endl;
+	getNetxImage(vrmStatus);
+
+#ifdef LINUX
+	int width = vrmStatus->p_source_img->m_image_format.m_width;
+	int height = vrmStatus->p_source_img->m_image_format.m_height;
+	Scalar color = CV_RGB(0, 0, 255);
+	VideoWriter videoOut(dateTimeString + ".avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, Size(width, height), false);
+	if (!videoOut.isOpened()) {
+		cout << "VideoWriter could not be opened" << endl;
+	}
+#endif
+	logfile << "frameCounter;hwTime;detectTime;midx;midy;x;y;width;height;roll;pitch;yaw;correctureX;correctureY;localX;localY;localXSet;localYSet" << endl;
 	do {
 		getNetxImage(vrmStatus);
 		getMostRecentImage(vrmStatus);
@@ -39,15 +59,14 @@ int main(int argc, char** argv) {
 		// (like a trigger timeout) occured.
 		if (vrmStatus->p_source_img) {
 			getFrameCounter(vrmStatus);
-			//cout << "frame grabbed clock():" << clock() << "  m_time_stamp: " << vrmStatus->p_source_img->m_time_stamp << "  frame_counter: " << vrmStatus->frame_counter << endl;
+			//logfile << "frame grabbed clock():" << clock() << "  m_time_stamp: " << vrmStatus->p_source_img->m_time_stamp << "  frame_counter: " << vrmStatus->frame_counter << endl;
 			// see, if we had to drop some frames due to data transfer stalls. if so,
 			// output a message
 			//if (vrmStatus->frames_dropped)
-			//	cout << "- " << vrmStatus->frames_dropped << " frames dropped-" << endl;
+			//	logfile << "- " << vrmStatus->frames_dropped << " frames dropped-" << endl;
 
-			//Get time of capture
-			struct timespec monotime;
-			clock_gettime(CLOCK_MONOTONIC, &monotime);
+			struct timespec timeOfCapture;
+			clock_gettime(CLOCK_MONOTONIC, &timeOfCapture);
 
 			Mat mat = getMat(vrmStatus->p_source_img);
 			objs.clear();
@@ -64,7 +83,7 @@ int main(int argc, char** argv) {
 
 			int height = vrmStatus->p_source_img->m_image_format.m_height;
 			int width = vrmStatus->p_source_img->m_image_format.m_width;
-			//cout << "detectTime" << detectTime << "ms detectSize: " << detecteSize << endl;
+			//logfile << "detectTime" << detectTime << "ms detectSize: " << detecteSize << endl;
 			if (objs.size() > 0) {
 				int maxX = 0;
 				int maxY = 0;
@@ -88,16 +107,19 @@ int main(int argc, char** argv) {
 				mavlink_d3_pitchroll_t pitchRoll = mavlink.getPitchRoll();
 				float corrX = midX * 0.0005f + pitchRoll.roll;
 				float corrY = midY * 0.0005f + pitchRoll.pitch;
-				cout << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
+				long int hwTime = timeOfCapture.tv_nsec / 1000000;
+				cout << vrmStatus->frame_counter << ";" << hwTime << ";" << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
 				cout << ";" << max->width << ";" << max->height;
 				cout << ";" << pitchRoll.roll << ";" << pitchRoll.pitch << ";" << corrX << ";" << corrY;
 				cout << endl;
-				mavlink.send_target(monotime.tv_nsec/1000000,corrX * 10, corrY * 10);
+				mavlink.send_target(corrY * -1, corrX * 1, 0.0f);
 #ifdef LINUX
 				rectangle(mat, cvPoint(cvRound(max->x), cvRound(max->y)), cvPoint(cvRound((max->x + max->width - 1)), cvRound((max->y + max->height - 1))), color, 3, 8, 0);
 #endif
 			}
 #ifdef LINUX
+			putText(mat, to_string(vrmStatus->frame_counter), Point(0, 30), FONT_HERSHEY_SCRIPT_SIMPLEX, 1, color);
+			videoOut.write(mat);
 			imshow("result", mat);
 			waitKey(1);
 #endif
@@ -111,7 +133,7 @@ int main(int argc, char** argv) {
 	cvDestroyWindow("result");
 #endif
 	closeDevice(vrmStatus);
-	cout << "exit." << endl;
+	logfile << "exit." << endl;
 
 	mavlink.stop();
 	return 0;
