@@ -58,7 +58,8 @@ void MavlinkBridge::initStreams() {
 		close();
 		return;
 	}
-	char cmd[] = "sh /etc/init.d/rc.usb\n";
+	//char cmd[] = "sh /etc/init.d/rc.usb\n";
+	char cmd[] = "sh /etc/init.d/rc.usb.d3\n";
 	sleep(2);
 	while (read(bridge_tty_fd, &bridge_c, 1) > 0 && bridge_c != 0) {
 		write(STDOUT_FILENO, &bridge_c, 1); // if new data is available on the serial port, print it out
