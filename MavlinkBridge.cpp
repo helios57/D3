@@ -8,9 +8,6 @@
 #include "MavlinkBridge.h"
 namespace d3 {
 
-	void blubber() {
-
-	}
 	MavlinkBridge::MavlinkBridge() :
 			running(true),
 			connected(false),
@@ -128,10 +125,12 @@ namespace d3 {
 	}
 
 	void MavlinkBridge::threadMain() {
-		this_thread::sleep_for(chrono::seconds(20));
 		initStreams();
-
 		while (running) {
+			if (!connected) {
+				initStreams();
+				this_thread::sleep_for(chrono::seconds(20));
+			}
 			readFromStream();
 			this_thread::sleep_for(chrono::milliseconds(10));
 		}
