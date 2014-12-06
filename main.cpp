@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 	Scalar color = CV_RGB(0, 0, 255);
 	VideoWriter videoOut(dateTimeString + ".avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, Size(width, height), false);
 	if (!videoOut.isOpened()) {
-		cout << "VideoWriter could not be opened" << endl;
+		logfile << "VideoWriter could not be opened" << endl;
 	}
 #endif
 	logfile << "frameCounter;hwTime;detectTime;midx;midy;x;y;width;height;roll;pitch;yaw;correctureX;correctureY;localX;localY;localXSet;localYSet" << endl;
@@ -107,12 +107,12 @@ int main(int argc, char** argv) {
 				mavlink_d3_pitchroll_t pitchRoll = mavlink.getPitchRoll();
 				float corrX = midX * 0.0005f + pitchRoll.roll;
 				float corrY = midY * 0.0005f + pitchRoll.pitch;
-				long int hwTime = timeOfCapture.tv_nsec / 1000000;
-				cout << vrmStatus->frame_counter << ";" << hwTime << ";" << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
-				cout << ";" << max->width << ";" << max->height;
-				cout << ";" << pitchRoll.roll << ";" << pitchRoll.pitch << ";" << corrX << ";" << corrY;
-				cout << endl;
-				mavlink.send_target(corrY * -1, corrX * 1, 0.0f);
+				uint64_t hwTime = timeOfCapture.tv_nsec / 1000;
+				logfile << vrmStatus->frame_counter << ";" << hwTime << ";" << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
+				logfile << ";" << max->width << ";" << max->height;
+				logfile << ";" << pitchRoll.roll << ";" << pitchRoll.pitch << ";" << corrX << ";" << corrY;
+				logfile << endl;
+				mavlink.send_target(hwTime, corrX, corrY);
 #ifdef LINUX
 				rectangle(mat, cvPoint(cvRound(max->x), cvRound(max->y)), cvPoint(cvRound((max->x + max->width - 1)), cvRound((max->y + max->height - 1))), color, 3, 8, 0);
 #endif
@@ -128,7 +128,8 @@ int main(int argc, char** argv) {
 			//printf("attitude: time=%f roll=%f pitch=%f yaw=%f rollspeed=%f pitchspeed=%f yawspeed=%f\n", //
 			//(float) at.time_boot_ms, at.roll, at.pitch, at.yaw, at.rollspeed, at.pitchspeed, at.yawspeed);	//
 		}
-	} while (1);
+	}
+	while (1);
 #ifdef LINUX
 	cvDestroyWindow("result");
 #endif

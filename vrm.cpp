@@ -101,7 +101,7 @@ void getMostRecentImage(VrmStatus* status) {
 	while (status->fp_ready) {
 		if (status->p_source_img) {
 			VRmUsbCamGetFrameCounter(status->p_source_img, &status->frame_counter);
-			cout << "frame skipped clock():" << clock() << "  m_time_stamp: " << status->p_source_img->m_time_stamp << "  frame_counter: " << status->frame_counter << endl;
+			//cout << "frame skipped clock():" << clock() << "  m_time_stamp: " << status->p_source_img->m_time_stamp << "  frame_counter: " << status->frame_counter << endl;
 			VRmUsbCamUnlockNextImage(status->device, &status->p_source_img);
 		}
 		getNetxImage(status);

@@ -48,8 +48,8 @@ class MavlinkBridge {
 		void start();
 		void stop();
 		mavlink_d3_pitchroll_t getPitchRoll();
-		void send_target(long timestamp, float x, float y);
-		void send_flow(long timestamp_from, long timestamp_to, float x, float y);
+		void send_target(uint64_t timestamp, float x, float y);
+		void send_flow(uint64_t timestamp_from, uint64_t timestamp_to, float x, float y);
 };
 
 } /* namespace d3 */
