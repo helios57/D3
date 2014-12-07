@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
 
 			struct timespec timeOfCapture;
 			clock_gettime(CLOCK_MONOTONIC, &timeOfCapture);
+			mavlink_d3_pitchroll_t pitchRoll = mavlink.getPitchRoll();
 
 			Mat mat = getMat(vrmStatus->p_source_img);
 			objs.clear();
@@ -104,10 +105,9 @@ int main(int argc, char** argv) {
 #endif
 				int midX = max->x + max->width / 2 - width / 2;
 				int midY = max->y + max->height / 2 - height / 2;
-				mavlink_d3_pitchroll_t pitchRoll = mavlink.getPitchRoll();
 				float corrX = midX * 0.0005f + pitchRoll.roll;
 				float corrY = midY * 0.0005f + pitchRoll.pitch;
-				uint64_t hwTime = timeOfCapture.tv_nsec / 1000;
+				uint64_t hwTime = timeOfCapture.tv_sec * 1000000 + timeOfCapture.tv_nsec / 1000;
 				logfile << vrmStatus->frame_counter << ";" << hwTime << ";" << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
 				logfile << ";" << max->width << ";" << max->height;
 				logfile << ";" << pitchRoll.roll << ";" << pitchRoll.pitch << ";" << corrX << ";" << corrY;

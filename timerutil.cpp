@@ -18,6 +18,6 @@ struct timespec timer_start() {
 long int timer_end(struct timespec start_time) {
 	struct timespec end_time;
 	clock_gettime(CLOCK_REALTIME, &end_time);
-	long int diffInMillis = (end_time.tv_nsec / 1000000) - (start_time.tv_nsec / 1000000);
+	long int diffInMillis = (end_time.tv_sec - start_time.tv_sec) * 1000 + (end_time.tv_nsec - start_time.tv_nsec) / 1000000;
 	return diffInMillis;
 }
