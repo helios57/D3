@@ -50,7 +50,10 @@ int main(int argc, char** argv) {
 		logfile << "VideoWriter could not be opened" << endl;
 	}
 #endif
-	logfile << "frameCounter;hwTime;detectTime;midx;midy;x;y;width;height;roll;pitch;yaw;correctureX;correctureY;localX;localY;localXSet;localYSet" << endl;
+	logfile << "frameCounter;hwTime;detectTime;midx;midy;x;y;width;height;roll;pitch;correctureX;correctureY,wrongDetection" << endl;
+
+	int lastMidX = 0;
+	int lastMidY = 0;
 	do {
 		getNetxImage(vrmStatus);
 		getMostRecentImage(vrmStatus);
@@ -68,6 +71,8 @@ int main(int argc, char** argv) {
 			struct timespec timeOfCapture;
 			clock_gettime(CLOCK_MONOTONIC, &timeOfCapture);
 			mavlink_d3_pitchroll_t pitchRoll = mavlink.getPitchRoll();
+			float roll = pitchRoll.roll;
+			float pitch = pitchRoll.pitch;
 
 			Mat mat = getMat(vrmStatus->p_source_img);
 			objs.clear();
@@ -105,14 +110,21 @@ int main(int argc, char** argv) {
 #endif
 				int midX = max->x + max->width / 2 - width / 2;
 				int midY = max->y + max->height / 2 - height / 2;
-				float corrX = midX * 0.0005f + pitchRoll.roll;
-				float corrY = midY * 0.0005f + pitchRoll.pitch;
+
+				bool wrongDetection = (abs(lastMidX - midX) + abs(lastMidY - midY)) > 200;
+				lastMidX = midX;
+				lastMidY = midY;
+
+				float corrX = midX * 0.000576561f + roll;
+				float corrY = midY * 0.000576561f + pitch;
 				uint64_t hwTime = timeOfCapture.tv_sec * 1000000 + timeOfCapture.tv_nsec / 1000;
 				logfile << vrmStatus->frame_counter << ";" << hwTime << ";" << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
 				logfile << ";" << max->width << ";" << max->height;
-				logfile << ";" << pitchRoll.roll << ";" << pitchRoll.pitch << ";" << corrX << ";" << corrY;
-				logfile << endl;
-				mavlink.send_target(hwTime, corrX, corrY);
+				logfile << ";" << roll << ";" << pitch << ";" << corrX << ";" << corrY;
+				logfile << ";" << wrongDetection << endl;
+				if (!wrongDetection) {
+					mavlink.send_target(hwTime, corrX, corrY);
+				}
 #ifdef LINUX
 				rectangle(mat, cvPoint(cvRound(max->x), cvRound(max->y)), cvPoint(cvRound((max->x + max->width - 1)), cvRound((max->y + max->height - 1))), color, 3, 8, 0);
 #endif
@@ -124,9 +136,6 @@ int main(int argc, char** argv) {
 			waitKey(1);
 #endif
 			unlockImage(vrmStatus);
-			//mavlink_attitude_t at = mavlink.getAttitude();
-			//printf("attitude: time=%f roll=%f pitch=%f yaw=%f rollspeed=%f pitchspeed=%f yawspeed=%f\n", //
-			//(float) at.time_boot_ms, at.roll, at.pitch, at.yaw, at.rollspeed, at.pitchspeed, at.yawspeed);	//
 		}
 	}
 	while (1);
