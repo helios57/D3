@@ -20,6 +20,10 @@ int main(int argc, char** argv) {
 
 	ofstream logfile;
 	logfile.open(dateTimeString + ".log", ios_base::app);
+	logfile << "started at " << dateTimeString << endl;
+	logfile << "sleeping for 20 sec to let the usb initialize" << endl;
+
+	sleep(20);
 
 	MavlinkBridge mavlink;
 	mavlink.start();
@@ -50,7 +54,7 @@ int main(int argc, char** argv) {
 		logfile << "VideoWriter could not be opened" << endl;
 	}
 #endif
-	logfile << "frameCounter;hwTime;detectTime;midx;midy;x;y;width;height;roll;pitch;correctureX;correctureY,wrongDetection" << endl;
+	logfile << "frameCounter;hwTime;detectTimeUs;midx;midy;x;y;width;height;roll;pitch;correctureX;correctureY,wrongDetection,detectedSize" << endl;
 
 	int lastMidX = 0;
 	int lastMidY = 0;
@@ -89,8 +93,9 @@ int main(int argc, char** argv) {
 
 			int height = vrmStatus->p_source_img->m_image_format.m_height;
 			int width = vrmStatus->p_source_img->m_image_format.m_width;
+			std::vector::size_type detectedSize = objs.size();
 			//logfile << "detectTime" << detectTime << "ms detectSize: " << detecteSize << endl;
-			if (objs.size() > 0) {
+			if (detectedSize > 0) {
 				int maxX = 0;
 				int maxY = 0;
 				vector<Rect>::const_iterator max;
@@ -121,7 +126,7 @@ int main(int argc, char** argv) {
 				logfile << vrmStatus->frame_counter << ";" << hwTime << ";" << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
 				logfile << ";" << max->width << ";" << max->height;
 				logfile << ";" << roll << ";" << pitch << ";" << corrX << ";" << corrY;
-				logfile << ";" << wrongDetection << endl;
+				logfile << ";" << wrongDetection << ";" << detectedSize << endl;
 				if (!wrongDetection) {
 					mavlink.send_target(hwTime, corrX, corrY);
 				}
