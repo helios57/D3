@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
 
 			int height = vrmStatus->p_source_img->m_image_format.m_height;
 			int width = vrmStatus->p_source_img->m_image_format.m_width;
-			std::vector::size_type detectedSize = objs.size();
+			int detectedSize = objs.size();
 			//logfile << "detectTime" << detectTime << "ms detectSize: " << detecteSize << endl;
 			if (detectedSize > 0) {
 				int maxX = 0;
@@ -120,8 +120,8 @@ int main(int argc, char** argv) {
 				lastMidX = midX;
 				lastMidY = midY;
 
-				float corrX = midX * 0.000576561f + roll;
-				float corrY = midY * 0.000576561f + pitch;
+				float corrX = midX * 0.000660996 + midX * midX * 3.0e-8 + roll;
+				float corrY = midY * 0.000676192 + midY * midY * 2.5e-8 + pitch;
 				uint64_t hwTime = timeOfCapture.tv_sec * 1000000 + timeOfCapture.tv_nsec / 1000;
 				logfile << vrmStatus->frame_counter << ";" << hwTime << ";" << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
 				logfile << ";" << max->width << ";" << max->height;
