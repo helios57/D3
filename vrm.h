@@ -36,5 +36,7 @@ void getMostRecentImage(VrmStatus* status);
 void unlockImage(VrmStatus* status);
 void getFrameCounter(VrmStatus* vrmStatus);
 void closeDevice(const VrmStatus* vrmStatus);
+void getGain(VrmStatus* vrmStatus);
+void setGain(VrmStatus* vrmStatus);
 
 #endif /* VRM_H_ */

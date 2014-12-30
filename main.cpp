@@ -10,6 +10,26 @@
 using namespace std;
 using namespace d3;
 
+void checkAndAdjustGain(Mat& mat, VrmStatus* vrmStatus) {
+	double sum = 0;
+	int count = 0;
+	for (int i = 0; i < mat.rows; i += 10) {
+		for (int j = 0; j < mat.cols; j += 10) {
+			sum += mat.at<uchar>(i, j);
+			count++;
+		}
+	}
+	double meanValueDouble = sum / count;
+	if (meanValueDouble < 50.0f && vrmStatus->gain < 200) {
+		vrmStatus->gain++;
+		setGain(vrmStatus);
+	}
+	if (meanValueDouble > 100.0f && vrmStatus->gain > 2) {
+		vrmStatus->gain--;
+		setGain(vrmStatus);
+	}
+}
+
 int main(int argc, char** argv) {
 	time_t starttime;
 	time(&starttime);
@@ -138,30 +158,8 @@ int main(int argc, char** argv) {
 			}
 			else {
 				//Nothing found, check gain
-				if (!VRmUsbCamGetPropertyValueI(vrmStatus->device, vrmStatus->gainPropertyId, &vrmStatus->gain)) {
-					LogExit();
-				}
-				double sum = 0;
-				int count = 0;
-				for (int i = 0; i < mat.rows; i += 10) {
-					for (int j = 0; j < mat.cols; j += 10) {
-						sum += mat.at<uchar>(i, j);
-						count++;
-					}
-				}
-				double meanValueDouble = sum / count;
-				if (meanValueDouble < 50.0f && vrmStatus->gain < 200) {
-					vrmStatus->gain++;
-					if (!VRmUsbCamSetPropertyValueI(vrmStatus->device, vrmStatus->gainPropertyId, &vrmStatus->gain)) {
-						LogExit();
-					}
-				}
-				if (meanValueDouble > 100.0f && vrmStatus->gain > 2) {
-					vrmStatus->gain--;
-					if (!VRmUsbCamSetPropertyValueI(vrmStatus->device, vrmStatus->gainPropertyId, &vrmStatus->gain)) {
-						LogExit();
-					}
-				}
+				getGain(vrmStatus);
+				checkAndAdjustGain(mat, vrmStatus);
 			}
 #ifdef LINUX
 			putText(mat, to_string(vrmStatus->frame_counter), Point(0, 30), FONT_HERSHEY_SCRIPT_SIMPLEX, 1, color);

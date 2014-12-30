@@ -122,3 +122,11 @@ void getFrameCounter(VrmStatus* status) {
 void closeDevice(const VrmStatus* status) {
 	VRMEXECANDCHECK(VRmUsbCamCloseDevice(status->device));
 }
+
+void getGain(VrmStatus* vrmStatus) {
+	VRMEXECANDCHECK(VRmUsbCamGetPropertyValueI(vrmStatus->device, vrmStatus->gainPropertyId, &vrmStatus->gain));
+}
+
+void setGain(VrmStatus* vrmStatus) {
+	VRMEXECANDCHECK(VRmUsbCamSetPropertyValueI(vrmStatus->device, vrmStatus->gainPropertyId, &vrmStatus->gain));
+}
