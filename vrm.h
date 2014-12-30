@@ -25,6 +25,8 @@ struct VrmStatus {
 		VRmImage* p_source_img;
 		VRmDWORD* frames_dropped, frame_counter;
 		VRmBOOL* fp_ready;
+		VRmPropId gainPropertyId;
+		int gain;
 };
 
 void getNetxImage(VrmStatus* status);

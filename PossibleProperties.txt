@@ -1,0 +1,69 @@
+Properties for first sensor port:
+
+[0]: 0x1001, CAM_EXPOSURE_TIME_F "Exposure Time [ms]"
+[1]: 0x1012, CAM_TRG2EXP_TIME_F "Trigger/Expose Signal to Start of Exposure Delay [ms]" (read-only)
+[2]: 0x1014, CAM_EXP2VS_TIME_F "Start of Exposure to VSync Delay [ms]" (read-only)
+[3]: 0x1015, CAM_ROW_TIME_F "Row Readout Time [ms]" (read-only)
+[4]: 0x1023, CAM_GAIN_MONOCHROME_I "Monochrome Gain"
+[5]: 0x1040, CAM_SENSOR_SIZE_I "Sensor Size" (read-only)
+[6]: 0x1042, CAM_MONOCHROME_MODE_B "Monochrome Mode" (read-only)
+[7]: 0x1043, CAM_GLOBAL_SHUTTER_B "Global Shutter" (read-only)
+[8]: 0x1045, CAM_DEVICE_TYPE_E "Imaging Device Type" (read-only)
+  =>  Possible values:
+      0x10450000, CAM_DEVICE_TYPE_CMOS "CMOS"
+[9]: 0x2000, DEVICE_HARDWARE_REVISION_I "Device Hardware Revision [vv.rr]" (read-only)
+[10]: 0x2001, DEVICE_FIRMWARE_REVISION_I "Device Firmware Revision [vv.rr]" (read-only)
+[11]: 0x2002, DEVICE_NV_MEM_TOTAL_I "Total nonvolatile memory of device [bytes]" (read-only)
+[12]: 0x2003, DEVICE_NV_MEM_FREE_I "Free nonvolatile memory of device [bytes]" (read-only)
+[13]: 0x2004, DEVICE_NV_MEM_FILESYS_FORMAT_B "Nonvolatile memory has filesystem format" (read-only)
+[14]: 0x2100, CAM_PIXEL_CLOCK_F "Pixel Clock [MHz]" (read-only)
+[15]: 0x2120, CAM_TRIGGER_POLARITY_E "TriggerIn Polarity and Sensitivity Mode"
+  =>  Possible values:
+      0x21200000, CAM_TRIGGER_POLARITY_POS_EDGE "edge sensitive, positive"
+      0x21200001, CAM_TRIGGER_POLARITY_NEG_EDGE "edge sensitive, negative"
+      0x21200002, CAM_TRIGGER_POLARITY_POS_LEVEL "level sensitive, positive"
+      0x21200003, CAM_TRIGGER_POLARITY_NEG_LEVEL "level sensitive, negative"
+[16]: 0x2121, CAM_TRIGGER_DELAY_F "TriggerIn Delay [ms]"
+[17]: 0x2123, CAM_INTERNAL_TRIGGER_RATE_F "Internal trigger rate [Hz]"
+[18]: 0x2130, CAM_STROBE_POLARITY_E "StrobeOut Polarity"
+  =>  Possible values:
+      0x21300000, CAM_STROBE_POLARITY_DISABLED "disabled"
+      0x21300001, CAM_STROBE_POLARITY_POS "pulse, high-active"
+      0x21300002, CAM_STROBE_POLARITY_NEG "pulse, low-active"
+[19]: 0x2131, CAM_STROBE_DELAY_F "StrobeIn delay [ms]"
+[20]: 0x2132, CAM_STROBE_WIDTH_F "StrobeOut Pulse Width [ms]"
+[21]: 0x3000, GRAB_SOURCE_FORMAT_E "Source (Raw) Format of the Device" (read-only)
+  =>  Possible values:
+      0x30000000, GRAB_SOURCE_FORMAT_8BIT_RAW "8-bit (Gray)"
+      0x30000001, GRAB_SOURCE_FORMAT_16BIT_RAW "16-bit (Gray)"
+[22]: 0x3001, GRAB_READOUT_ORIGIN_POINT_I "Readout Origin"
+[23]: 0x3002, GRAB_HOST_RINGBUFFER_SIZE_I "Size of Host Grabber Image Ringbuffer"
+[24]: 0x3003, GRAB_FRAMERATE_AVERAGE_F "Measured Framerate Average (1sec intervals)" (read-only)
+[25]: 0x3004, GRAB_FRAMERATE_ESTIMATED_F "Estimated Framerate" (read-only)
+[26]: 0x3005, GRAB_HOST_RINGBUFFER_IMAGES_READY_I "Number of Images ready to be used in Host Grabber Image Ringbuffer" (read-only)
+[27]: 0x3006, GRAB_CONFIG_E "Currently selected/active config" (read-only)
+  =>  Possible values:
+      0x30060000, GRAB_CONFIG_FACTORY_DEFAULTS "<0> factory defaults"
+      0x30060001, GRAB_CONFIG_USER_DEFAULTS "<1> user defaults"
+[28]: 0x3007, GRAB_CONFIG_DESCRIPTION_S "Description of currently selected/active config"
+[29]: 0x3008, GRAB_DATARATE_AVERAGE_I "Measured Datarate Average (1sec intervals) [bytes/sec]" (read-only)
+[30]: 0x3010, GRAB_USER_ROI_RECT_I "Sensor Readout ROI" (read-only)
+[31]: 0x3080, GRAB_MODE_E "Grabbing Mode"
+  =>  Possible values:
+      0x30800001, GRAB_MODE_TRIGGERED_EXT "external trigger"
+      0x30800002, GRAB_MODE_TRIGGERED_SOFT "soft-trigger"
+      0x30800006, GRAB_MODE_TRIGGERED_INTERNAL "internal trigger"
+[32]: 0x3081, GRAB_TRIGGER_TIMEOUT_F "Trigger Timeout [ms] (0 means disabled)"
+[33]: 0x3091, GRAB_SENSOR_ENABLE_1_B "Sensor Enable: Port #1" (read-only)
+[34]: 0x3100, FILTER_MASTER_GAMMA_F "Gamma (Masterch./Monochrome)"
+[35]: 0x3101, FILTER_MASTER_LUMINANCE_I "Luminance (Masterch./Monochrome)"
+[36]: 0x3102, FILTER_MASTER_CONTRAST_F "Contrast (Masterch./Monochrome)"
+[37]: 0x3103, FILTER_MASTER_BLACKLEVEL_I "Blacklevel (Masterch.)"
+[38]: 0x3500, PLUGIN_IMAGE_PROCESSING_B "Image Processing Enable"
+[39]: 0x4001, CONVERTER_FLIP_H_B "Horizontal flip of image"
+[40]: 0x4002, CONVERTER_FLIP_V_B "Vertical flip of image"
+[41]: 0x4003, CONVERTER_PREFER_GRAY_OUTPUT_B "Prefer grayscale output (resorts target format list)"
+[42]: 0x4100, IMAGEPROC_DPM_B "Defective Pixel Management (DPM) Enable"
+[43]: 0x5100, ETHCAM_SERVER_RINGBUFFER_SIZE_I "Size of Ethernet Camera Server Image Ringbuffer"
+[44]: 0x5101, ETHCAM_SERVER_MTU_I "Ethernet Camera Server UDP image packet length (MTU)"
+[45]: 0x5102, ETHCAM_SERVER_MAX_SIMULTANEOUS_IMAGES_I "Ethernet Camera Server: Maximum number of simultaneous image transfers"

@@ -6,6 +6,7 @@
  */
 
 #include "vrm.h"
+#include <cstring>
 using namespace std;
 
 void LogExit() {
@@ -19,12 +20,9 @@ void getNetxImage(VrmStatus* status) {
 	if (!VRmUsbCamLockNextImageEx2(status->device, status->port, &status->p_source_img, status->frames_dropped, 0)) {
 		// in case of an error, check for trigger timeouts and trigger stalls.
 		// both can be recovered, so continue. otherwise exit the app
-		if (VRmUsbCamLastErrorWasTriggerTimeout())
-			cerr << "trigger timeout" << endl;
-		else if (VRmUsbCamLastErrorWasTriggerStall())
-			cerr << "trigger stall" << endl;
-		else
-			LogExit();
+		if (VRmUsbCamLastErrorWasTriggerTimeout()) cerr << "trigger timeout" << endl;
+		else if (VRmUsbCamLastErrorWasTriggerStall()) cerr << "trigger stall" << endl;
+		else LogExit();
 	}
 }
 
@@ -63,36 +61,44 @@ void initCamera(VrmStatus* status) {
 	const char* source_color_format_str;
 	VRMEXECANDCHECK(VRmUsbCamGetStringFromColorFormat(source_format.m_color_format, &source_color_format_str));
 	cout << "Selected source format: " << source_format.m_width << "x" << source_format.m_height << " (" << source_color_format_str << ")" << endl;
+
+	VRmDWORD propSize = 0;
+	VRMEXECANDCHECK(VRmUsbCamGetPropertyListSize(status->device, &propSize));
+	for (unsigned int i = 0; i < propSize; ++i) {
+		VRmPropId id;
+		VRMEXECANDCHECK(VRmUsbCamGetPropertyListEntry(status->device, i, &id));
+		VRmPropInfo info;
+		VRMEXECANDCHECK(VRmUsbCamGetPropertyInfo(status->device, id, &info));
+		if (strcmp(info.m_id_string, "CAM_GAIN_MONOCHROME_I") == 0) {
+			status->gainPropertyId = id;
+			VRMEXECANDCHECK(VRmUsbCamGetPropertyValueI(status->device, status->gainPropertyId, &status->gain));
+			break;
+		}
+	}
+
 	// At first we convert to 8-bit gray format. If this is a B/W camera, this 1st conversion at least
 	// applies the VRmagic LUT to the image
 	VRmDWORD number_of_target_formats, i;
-	if (!VRmUsbCamGetTargetFormatListSizeEx2(status->device, status->port, &number_of_target_formats))
-		LogExit();
+	if (!VRmUsbCamGetTargetFormatListSizeEx2(status->device, status->port, &number_of_target_formats)) LogExit();
 
 	for (i = 0; i < number_of_target_formats; ++i) {
-		if (!VRmUsbCamGetTargetFormatListEntryEx2(status->device, status->port, i, &status->target_format))
-			LogExit();
+		if (!VRmUsbCamGetTargetFormatListEntryEx2(status->device, status->port, i, &status->target_format)) LogExit();
 
-		if (status->target_format.m_color_format == VRM_GRAY_8)
-			break;
+		if (status->target_format.m_color_format == VRM_GRAY_8) break;
 	}
 }
 
 void startGrabber(VrmStatus* status) {
-	if (!VRmUsbCamNewImage(&status->p_source_img, status->target_format))
-		LogExit();
+	if (!VRmUsbCamNewImage(&status->p_source_img, status->target_format)) LogExit();
 
-	if (!VRmUsbCamResetFrameCounter(status->device))
-		LogExit();
+	if (!VRmUsbCamResetFrameCounter(status->device)) LogExit();
 
 	// start grabber at first
-	if (!VRmUsbCamStart(status->device))
-		LogExit();
+	if (!VRmUsbCamStart(status->device)) LogExit();
 }
 
 void unlockImage(VrmStatus* status) {
-	if (!VRmUsbCamUnlockNextImage(status->device, &status->p_source_img))
-		LogExit();
+	if (!VRmUsbCamUnlockNextImage(status->device, &status->p_source_img)) LogExit();
 }
 
 void getMostRecentImage(VrmStatus* status) {

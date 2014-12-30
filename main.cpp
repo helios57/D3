@@ -23,7 +23,9 @@ int main(int argc, char** argv) {
 	logfile << "started at " << dateTimeString << endl;
 	logfile << "sleeping for 20 sec to let the usb initialize" << endl;
 
+#ifndef LINUX
 	sleep(20);
+#endif
 
 	MavlinkBridge mavlink;
 	mavlink.start();
@@ -54,7 +56,7 @@ int main(int argc, char** argv) {
 		logfile << "VideoWriter could not be opened" << endl;
 	}
 #endif
-	logfile << "frameCounter;hwTime;detectTimeUs;midx;midy;x;y;width;height;roll;pitch;correctureX;correctureY,wrongDetection,detectedSize" << endl;
+	logfile << "frameCounter;hwTime;detectTimeUs;midx;midy;x;y;width;height;roll;pitch;correctureX;correctureY,wrongDetection,detectedSize,gain" << endl;
 
 	int lastMidX = 0;
 	int lastMidY = 0;
@@ -126,13 +128,40 @@ int main(int argc, char** argv) {
 				logfile << vrmStatus->frame_counter << ";" << hwTime << ";" << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
 				logfile << ";" << max->width << ";" << max->height;
 				logfile << ";" << roll << ";" << pitch << ";" << corrX << ";" << corrY;
-				logfile << ";" << wrongDetection << ";" << detectedSize << endl;
+				logfile << ";" << wrongDetection << ";" << detectedSize << ";" << vrmStatus->gain << endl;
 				if (!wrongDetection) {
 					mavlink.send_target(hwTime, corrX, corrY);
 				}
 #ifdef LINUX
 				rectangle(mat, cvPoint(cvRound(max->x), cvRound(max->y)), cvPoint(cvRound((max->x + max->width - 1)), cvRound((max->y + max->height - 1))), color, 3, 8, 0);
 #endif
+			}
+			else {
+				//Nothing found, check gain
+				if (!VRmUsbCamGetPropertyValueI(vrmStatus->device, vrmStatus->gainPropertyId, &vrmStatus->gain)) {
+					LogExit();
+				}
+				double sum = 0;
+				int count = 0;
+				for (int i = 0; i < mat.rows; i += 10) {
+					for (int j = 0; j < mat.cols; j += 10) {
+						sum += mat.at<uchar>(i, j);
+						count++;
+					}
+				}
+				double meanValueDouble = sum / count;
+				if (meanValueDouble < 50.0f && vrmStatus->gain < 200) {
+					vrmStatus->gain++;
+					if (!VRmUsbCamSetPropertyValueI(vrmStatus->device, vrmStatus->gainPropertyId, &vrmStatus->gain)) {
+						LogExit();
+					}
+				}
+				if (meanValueDouble > 100.0f && vrmStatus->gain > 2) {
+					vrmStatus->gain--;
+					if (!VRmUsbCamSetPropertyValueI(vrmStatus->device, vrmStatus->gainPropertyId, &vrmStatus->gain)) {
+						LogExit();
+					}
+				}
 			}
 #ifdef LINUX
 			putText(mat, to_string(vrmStatus->frame_counter), Point(0, 30), FONT_HERSHEY_SCRIPT_SIMPLEX, 1, color);
