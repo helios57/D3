@@ -24,7 +24,7 @@ void checkAndAdjustGain(Mat& mat, VrmStatus* vrmStatus) {
 		vrmStatus->gain++;
 		setGain(vrmStatus);
 	}
-	if (meanValueDouble > 100.0f && vrmStatus->gain > 2) {
+	if (meanValueDouble > 100.0f && vrmStatus->gain > 12) {
 		vrmStatus->gain--;
 		setGain(vrmStatus);
 	}
