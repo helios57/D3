@@ -1,8 +1,5 @@
-// ==============================================================================================
-// This file is part of the VRmagic USB2.0 Camera Demo Application
-// ==============================================================================================
-#ifndef VRMUSBCAMDEMO_H
-#define VRMUSBCAMDEMO_H
+#ifndef D3_MAIN_H_
+#define D3_MAIN_H_
 
 // include the api of the library
 #include <vrmusbcam2.h>
@@ -28,4 +25,4 @@
 #include "opencv2/highgui/highgui_c.h"
 #endif
 
-#endif //VRMUSBCAMDEMO_H
+#endif //D3_MAIN_H
