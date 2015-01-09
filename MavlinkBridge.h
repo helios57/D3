@@ -1,8 +1,5 @@
 /*
  * MavlinkBridge.h
- *
- *  Created on: Oct 24, 2014
- *      Author: helios
  */
 
 #ifndef MAVLINKBRIDGE_H_

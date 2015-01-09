@@ -1,8 +1,5 @@
 /*
  * MavlinkBridge.cpp
- *
- *  Created on: Oct 24, 2014
- *      Author: helios
  */
 
 #include "MavlinkBridge.h"

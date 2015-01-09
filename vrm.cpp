@@ -1,8 +1,5 @@
 /*
  * vrm.cpp
- *
- *  Created on: Jul 12, 2014
- *      Author: helios
  */
 
 #include "vrm.h"

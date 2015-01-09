@@ -1,8 +1,5 @@
 /*
  * timerutil.h
- *
- *  Created on: Jul 12, 2014
- *      Author: helios
  */
 
 #ifndef TIMERUTIL_H_
