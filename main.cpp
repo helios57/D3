@@ -24,6 +24,46 @@ void checkAndAdjustGain(Mat& mat, VrmStatus* vrmStatus) {
 	}
 }
 
+void detect(const Mat& mat, CascadeClassifier* face_cascade, vector<Rect>& objs) {
+	for (int i = 512; i > 32; i /= 2) {
+		face_cascade->detectMultiScale(mat, objs, 1.1, 2, 0, Size(i, i));
+		if (!objs.empty()) {
+			break;
+		}
+	}
+}
+#ifdef LINUX
+void drawDetectedRectanglesWithoutMax(vector<Rect>::const_iterator max, const Mat& mat, vector<Rect>& objs) {
+	for (vector<Rect>::const_iterator r = objs.begin(); r != objs.end(); r++) {
+		if (r != max) {
+			rectangle(mat, cvPoint(cvRound(r->x), cvRound(r->y)), cvPoint(cvRound((r->x + r->width - 1)), cvRound((r->y + r->height - 1))), CV_RGB(0, 0, 128), 1, 8, 0);
+		}
+	}
+}
+
+void drawDetectedRectangle(const Mat& mat, vector<Rect>::const_iterator max, const Scalar& color) {
+	rectangle(mat, cvPoint(cvRound(max->x), cvRound(max->y)), cvPoint(cvRound((max->x + max->width - 1)), cvRound((max->y + max->height - 1))), color, 3, 8, 0);
+}
+
+void writeToVideoAndShowOnScreen(const Mat& mat, const Scalar& color, VrmStatus* vrmStatus, VideoWriter& videoOut) {
+	putText(mat, to_string(vrmStatus->frame_counter), Point(0, 30), FONT_HERSHEY_SCRIPT_SIMPLEX, 1, color);
+	videoOut.write(mat);
+	imshow("result", mat);
+}
+#endif
+
+void caclucateAndSendTarget(ofstream& logfile, uint64_t hwTime, long int detectTime, int midX, int midY, vector<Rect>::const_iterator max, float roll, float pitch, bool wrongDetection, int detectedSize, VrmStatus* vrmStatus, MavlinkBridge& mavlink) {
+	float corrX = midX * 0.000660996 + midX * midX * 3.0e-8 + roll;
+	float corrY = midY * 0.000676192 + midY * midY * 2.5e-8 + pitch;
+	logfile << vrmStatus->frame_counter << ";" << hwTime << ";" << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
+	logfile << ";" << max->width << ";" << max->height;
+	logfile << ";" << roll << ";" << pitch << ";" << corrX << ";" << corrY;
+	logfile << ";" << wrongDetection << ";" << detectedSize << ";" << vrmStatus->gain << endl;
+	if (!wrongDetection) {
+		mavlink.send_target(hwTime, corrX, corrY);
+	}
+}
+
 int main(int argc, char** argv) {
 	time_t starttime;
 	time(&starttime);
@@ -82,12 +122,6 @@ int main(int argc, char** argv) {
 		// (like a trigger timeout) occured.
 		if (vrmStatus->p_source_img) {
 			getFrameCounter(vrmStatus);
-			//logfile << "frame grabbed clock():" << clock() << "  m_time_stamp: " << vrmStatus->p_source_img->m_time_stamp << "  frame_counter: " << vrmStatus->frame_counter << endl;
-			// see, if we had to drop some frames due to data transfer stalls. if so,
-			// output a message
-			//if (vrmStatus->frames_dropped)
-			//	logfile << "- " << vrmStatus->frames_dropped << " frames dropped-" << endl;
-
 			struct timespec timeOfCapture;
 			clock_gettime(CLOCK_MONOTONIC, &timeOfCapture);
 			mavlink_d3_pitchroll_t pitchRoll = mavlink.getPitchRoll();
@@ -97,21 +131,13 @@ int main(int argc, char** argv) {
 			Mat mat = getMat(vrmStatus->p_source_img);
 			objs.clear();
 			timespec detectTimer = timer_start();
-			//int detecteSize = 0;
-			for (int i = 512; i > 32; i /= 2) {
-				//detecteSize = i;
-				face_cascade->detectMultiScale(mat, objs, 1.1, 2, 0, Size(i, i));
-				if (!objs.empty()) {
-					break;
-				}
-			}
+			detect(mat, face_cascade, objs);
 			long int detectTime = timer_end(detectTimer);
-
-			int height = vrmStatus->p_source_img->m_image_format.m_height;
-			int width = vrmStatus->p_source_img->m_image_format.m_width;
 			int detectedSize = objs.size();
-			//logfile << "detectTime" << detectTime << "ms detectSize: " << detecteSize << endl;
+
 			if (detectedSize > 0) {
+				int height = vrmStatus->p_source_img->m_image_format.m_height;
+				int width = vrmStatus->p_source_img->m_image_format.m_width;
 				int maxX = 0;
 				int maxY = 0;
 				vector<Rect>::const_iterator max;
@@ -123,31 +149,17 @@ int main(int argc, char** argv) {
 					}
 				}
 #ifdef LINUX
-				for (vector<Rect>::const_iterator r = objs.begin(); r != objs.end(); r++) {
-					if (r != max) {
-						rectangle(mat, cvPoint(cvRound(r->x), cvRound(r->y)), cvPoint(cvRound((r->x + r->width - 1)), cvRound((r->y + r->height - 1))), CV_RGB(0, 0, 128), 1, 8, 0);
-					}
-				}
+				drawDetectedRectanglesWithoutMax(max, mat, objs);
 #endif
 				int midX = max->x + max->width / 2 - width / 2;
 				int midY = max->y + max->height / 2 - height / 2;
-
 				bool wrongDetection = (abs(lastMidX - midX) + abs(lastMidY - midY)) > 200;
+				uint64_t hwTime = timeOfCapture.tv_sec * 1000000 + timeOfCapture.tv_nsec / 1000;
 				lastMidX = midX;
 				lastMidY = midY;
-
-				float corrX = midX * 0.000660996 + midX * midX * 3.0e-8 + roll;
-				float corrY = midY * 0.000676192 + midY * midY * 2.5e-8 + pitch;
-				uint64_t hwTime = timeOfCapture.tv_sec * 1000000 + timeOfCapture.tv_nsec / 1000;
-				logfile << vrmStatus->frame_counter << ";" << hwTime << ";" << detectTime << ";" << midX << ";" << midY << ";" << max->x << ";" << max->y;
-				logfile << ";" << max->width << ";" << max->height;
-				logfile << ";" << roll << ";" << pitch << ";" << corrX << ";" << corrY;
-				logfile << ";" << wrongDetection << ";" << detectedSize << ";" << vrmStatus->gain << endl;
-				if (!wrongDetection) {
-					mavlink.send_target(hwTime, corrX, corrY);
-				}
+				caclucateAndSendTarget(logfile, hwTime, detectTime, midX, midY, max, roll, pitch, wrongDetection, detectedSize, vrmStatus, mavlink);
 #ifdef LINUX
-				rectangle(mat, cvPoint(cvRound(max->x), cvRound(max->y)), cvPoint(cvRound((max->x + max->width - 1)), cvRound((max->y + max->height - 1))), color, 3, 8, 0);
+				drawDetectedRectangle(mat, max, color);
 #endif
 			}
 			else {
@@ -156,10 +168,7 @@ int main(int argc, char** argv) {
 				checkAndAdjustGain(mat, vrmStatus);
 			}
 #ifdef LINUX
-			putText(mat, to_string(vrmStatus->frame_counter), Point(0, 30), FONT_HERSHEY_SCRIPT_SIMPLEX, 1, color);
-			videoOut.write(mat);
-			imshow("result", mat);
-			waitKey(1);
+			writeToVideoAndShowOnScreen(mat, color, vrmStatus, videoOut);
 #endif
 			unlockImage(vrmStatus);
 		}
@@ -170,7 +179,6 @@ int main(int argc, char** argv) {
 #endif
 	closeDevice(vrmStatus);
 	logfile << "exit." << endl;
-
 	mavlink.stop();
 	return 0;
 }
